@@ -40,12 +40,22 @@ pub extern "C" fn wasmer(l: *mut lua_State) -> i32 {
 // lua_run wasmer '(module (type $main_t (func (result i32))) (func $main_f (type $main_t) (result i32) (i32.const 42)) (export "main" (func $main_f)))'
 fn handle_wasmer(l: &LuaBase) -> Result<i32, LuaWasmerError> {
     l.check_type(1, gmod_sys::lua_wrapper::Type::String);
-    let str = match l.get_string(1) {
+    let str_val = match l.get_string(1) {
         Some(s) => s,
         _ => return Err(LuaWasmerError::InvalidString),
     };
 
-    l.push_string(&format!("Result: {:?}", results));
+    let instance = match wasm::wasm_instance_str(&str_val) {
+        Ok(x) => x,
+        Err(e) => return Err(e),
+    };
+
+    let result = match instance.call_entry_point() {
+        Ok(x) => x,
+        Err(e) => return Err(e),
+    };
+
+    l.push_number(result as f64);
     Ok(1)
 }
 
@@ -55,13 +65,11 @@ pub extern "C" fn gmod13_open(state: *mut lua_State) -> i32 {
     let lua = LuaBase::new(unsafe { (*state).luabase });
     unsafe { lua.set_state(state) };
     lua.push_special(SpecialType::GlobalTable);
-    lua.push_c_function(Some(example));
-    lua.set_field(-2, "example");
     lua.push_c_function(Some(wasmer));
     lua.set_field(-2, "wasmer");
     lua.pop(1);
 
-    lua.print("Rust library loaded!");
+    lua.print("Web Assembly library loaded!");
 
     0
 }
