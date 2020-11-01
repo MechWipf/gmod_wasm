@@ -1,8 +1,6 @@
-use std::{borrow::Cow, cell::RefCell, ffi::CString};
+use std::{borrow::Cow, cell::RefCell};
 
-use wasmer::{
-    imports, wat2wasm, Cranelift, Function, Instance, Module, NativeFunc, Store, Value, JIT,
-};
+use wasmer::{imports, wat2wasm, Cranelift, Instance, Module, NativeFunc, Store, JIT};
 
 use crate::LuaWasmerError;
 
