@@ -9,7 +9,8 @@
         "rust-analyzer.checkOnSave.command": "clippy",
         "rust-analyzer.checkOnSave.enable": true,
         "rust-analyzer.cargo.loadOutDirsFromCheck": true,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "crates.listPreReleases": true,
     },
     "extensions": {
         "recommendations": [

@@ -23,6 +23,9 @@ pub struct LuaBase {
     lua_base: *mut GarrysMod_Lua_ILuaBase,
 }
 
+unsafe impl Send for LuaBase {}
+unsafe impl Sync for LuaBase {}
+
 impl LuaBase {
     pub fn new(lua: *mut GarrysMod_Lua_ILuaBase) -> Self {
         LuaBase { lua_base: lua }
