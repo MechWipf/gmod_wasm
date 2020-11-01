@@ -1,5 +1,6 @@
 #ifndef WRAPPER_H
 #define WRAPPER_H
+#define GMOD_ALLOW_DEPRECATED
 
 #include <GarrysMod/Lua/Interface.h>
 #include <GarrysMod/Lua/LuaBase.h>
@@ -112,9 +113,11 @@ extern "C"
 
     bool lua_push_meta_table(GarrysMod::Lua::ILuaBase *lua, int iType);
 
-    void lua_push_user_type(GarrysMod::Lua::ILuaBase *lua, void *data, int iType);
+    void lua_push_usertype(GarrysMod::Lua::ILuaBase *lua, void *data, int iType);
 
-    void lua_set_user_type(GarrysMod::Lua::ILuaBase *lua, int iStackPos, void *data);
+    void lua_set_usertype(GarrysMod::Lua::ILuaBase *lua, int iStackPos, void *data);
+
+    void *lua_get_usertype(GarrysMod::Lua::ILuaBase *lua, int iStackPos, int iType);
 }
 
 #endif

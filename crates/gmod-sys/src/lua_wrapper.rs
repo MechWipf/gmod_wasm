@@ -1,16 +1,22 @@
 use super::generated::{
     lua_State, lua_arg_error, lua_call, lua_check_number, lua_check_string, lua_check_type,
     lua_create_table, lua_equal, lua_get_bool, lua_get_c_func, lua_get_field, lua_get_meta_table,
-    lua_get_number, lua_get_string, lua_get_table, lua_get_type, lua_get_type_name, lua_insert,
-    lua_is_type, lua_next, lua_obj_len, lua_p_call, lua_pop, lua_push, lua_push_bool,
-    lua_push_c_closure, lua_push_c_function, lua_push_nil, lua_push_number, lua_push_special,
-    lua_push_string, lua_raw_equal, lua_raw_get, lua_raw_set, lua_reference_create,
-    lua_reference_free, lua_reference_push, lua_remove, lua_set_field, lua_set_meta_table,
-    lua_set_state, lua_set_table, lua_throw_error, lua_top, GarrysMod_Lua_CFunc,
-    GarrysMod_Lua_ILuaBase,
+    lua_get_number, lua_get_string, lua_get_table, lua_get_type, lua_get_type_name,
+    lua_get_usertype, lua_insert, lua_is_type, lua_next, lua_obj_len, lua_p_call, lua_pop,
+    lua_push, lua_push_bool, lua_push_c_closure, lua_push_c_function, lua_push_nil,
+    lua_push_number, lua_push_special, lua_push_string, lua_push_usertype, lua_raw_equal,
+    lua_raw_get, lua_raw_set, lua_reference_create, lua_reference_free, lua_reference_push,
+    lua_remove, lua_set_field, lua_set_meta_table, lua_set_state, lua_set_table, lua_throw_error,
+    lua_top, GarrysMod_Lua_CFunc, GarrysMod_Lua_ILuaBase,
 };
 
-use std::ffi::{CStr, CString};
+use std::{
+    any::Any,
+    ffi::{CStr, CString},
+    fmt::Debug,
+    mem,
+    pin::Pin,
+};
 use thiserror::Error;
 
 pub struct LuaBase {
@@ -234,6 +240,20 @@ impl LuaBase {
 
     pub fn reference_push(&self, raw_pointer: i32) {
         unsafe { lua_reference_push(self.lua_base, raw_pointer) }
+    }
+
+    pub fn push_usertype<T: Any>(&self, data: Box<T>) {
+        unsafe {
+            let raw_pointer: *mut u8 = mem::transmute(data);
+            lua_push_usertype(self.lua_base, raw_pointer as _, Type::UserData as _)
+        }
+    }
+
+    pub fn get_usertype<T: Any>(&self, stack_pos: i32) -> Option<Box<T>> {
+        let ptr = unsafe { lua_get_usertype(self.lua_base, stack_pos, Type::UserData as _) };
+        let result: Box<T> = unsafe { mem::transmute(ptr) };
+
+        Some(result)
     }
 }
 

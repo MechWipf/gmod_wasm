@@ -257,12 +257,17 @@ using namespace GarrysMod::Lua;
     return lua->PushMetaTable(iType);
 }
 
-/* extern "C" */ void lua_push_user_type(GarrysMod::Lua::ILuaBase *lua, void *data, int iType)
+/* extern "C" */ void lua_set_user_type(GarrysMod::Lua::ILuaBase *lua, int iStackPos, void *data)
+{
+    lua->SetUserType(iStackPos, data);
+}
+
+/* extern "C" */ void lua_push_usertype(GarrysMod::Lua::ILuaBase *lua, void *data, int iType)
 {
     lua->PushUserType(data, iType);
 }
 
-/* extern "C" */ void lua_set_user_type(GarrysMod::Lua::ILuaBase *lua, int iStackPos, void *data)
+/* extern "C" */ void *lua_get_usertype(GarrysMod::Lua::ILuaBase *lua, int iStackPos, int iType)
 {
-    lua->SetUserType(iStackPos, data);
+    return lua->GetUserdata(iStackPos);
 }
