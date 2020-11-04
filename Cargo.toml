@@ -17,4 +17,6 @@ wasmer = "1.0.0-alpha"
 wasmer-compiler-cranelift = "1.0.0-alpha"
 thiserror = "1.0.21"
 uuid = { version="0.8.1", features = [ "v4" ] }
-lazy_static = "1.4.0"
+tarpc = { version = "0.23.1", features = ["tokio1"] }
+futures = "0.3.7"
+tokio = { version = "0.3.3", features = ["full"] }
