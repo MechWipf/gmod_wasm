@@ -1,8 +1,6 @@
-use std::{borrow::Cow, cell::RefCell};
-
-use wasmer::{imports, wat2wasm, Cranelift, Instance, Module, NativeFunc, Store, JIT};
-
 use crate::error::LuaWasmerError;
+use std::{borrow::Cow, cell::RefCell};
+use wasmer::{imports, wat2wasm, Cranelift, Instance, Module, NativeFunc, Store, JIT};
 
 pub fn wasm_instance_bytes(wasm_bytes: Cow<[u8]>) -> Result<WasmInstance, LuaWasmerError> {
     Ok(WasmInstance::new(wasm_bytes)?)
