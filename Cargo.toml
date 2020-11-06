@@ -13,10 +13,14 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gmod-sys = { version="*", path="crates/gmod-sys" }
-wasmer = "1.0.0-alpha"
-wasmer-compiler-cranelift = "1.0.0-alpha"
-thiserror = "1.0.21"
-uuid = { version="0.8.1", features = [ "v4" ] }
-tarpc = { version = "0.23.1", features = ["tokio1"] }
-futures = "0.3.7"
-tokio = { version = "0.3.3", features = ["full"] }
+wasmer = "1.0.0-alpha3"
+wasmer-engine = "1.0.0-alpha3"
+wasmer-compiler-cranelift = "1.0.0-alpha3"
+thiserror = "1.0"
+uuid = { version="0.8", features = [ "v4" ] }
+futures = "0.3"
+serde = "1.0"
+fibers_rpc = "0.3"
+fibers = "0.1.13"
+bytecodec = "0.4.13"
+
