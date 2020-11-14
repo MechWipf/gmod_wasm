@@ -1,96 +1,112 @@
+mod global_state;
 mod wasm;
 
-use gmod_sys::{
-    lua_State,
-    lua_wrapper::{LuaBase, SpecialType},
+use lrpc::*;
+use lua_wasmer_common::rpc::{
+    EchoReq, EchoRes, InvokeReq, InvokeRes, IsValidReq, IsValidRes, NewFromBinaryReq,
+    NewFromWatReq, NewRes, RemoveReq, RemoveRes,
 };
 
-use thiserror::Error;
-
-#[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn example(l: *mut lua_State) -> i32 {
-    let lua = LuaBase::new(unsafe { (*l).luabase });
-
-    if let Some(str_val) = lua.get_string(1) {
-        lua.create_table();
-        lua.push_string(&str_val);
-        lua.set_field(-2, "value");
-        1
-    } else {
-        lua.throw_error("Parameter invalid.");
-        0
+#[fmt_function]
+pub fn handle_echo(req: EchoReq) -> EchoRes {
+    EchoRes {
+        content: Ok(req.msg),
     }
 }
 
-#[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn wasmer(l: *mut lua_State) -> i32 {
-    let lua = LuaBase::new(unsafe { (*l).luabase });
-
-    match handle_wasmer(&lua) {
+#[fmt_function]
+pub fn handle_new_from_wat(req: NewFromWatReq) -> NewRes {
+    let instance = match wasm::wasm_instance_str(&req.wat) {
         Ok(x) => x,
         Err(e) => {
-            lua.throw_error(&format!("{:?}", e));
-            0
+            return NewRes {
+                content: Err(e.to_string()),
+            }
         }
+    };
+
+    match global_state::GLOBAL_STATE.lock() {
+        Ok(x) => NewRes {
+            content: Ok(x.instance_add(instance)),
+        },
+        Err(e) => NewRes {
+            content: Err(String::from("Failed to aquire lock")),
+        },
     }
 }
 
-// lua_run wasmer '(module (type $main_t (func (result i32))) (func $main_f (type $main_t) (result i32) (i32.const 42)) (export "main" (func $main_f)))'
-fn handle_wasmer(l: &LuaBase) -> Result<i32, LuaWasmerError> {
-    l.check_type(1, gmod_sys::lua_wrapper::Type::String);
-    let str_val = match l.get_string(1) {
-        Some(s) => s,
-        _ => return Err(LuaWasmerError::InvalidString),
-    };
-
-    let instance = match wasm::wasm_instance_str(&str_val) {
+#[fmt_function]
+pub fn handle_new_from_binary(req: NewFromBinaryReq) -> NewRes {
+    let instance = match wasm::wasm_instance_bytes(&req.binary) {
         Ok(x) => x,
-        Err(e) => return Err(e),
+        Err(e) => {
+            return NewRes {
+                content: Err(e.to_string()),
+            }
+        }
     };
 
-    let result = match instance.call_entry_point() {
-        Ok(x) => x,
-        Err(e) => return Err(e),
-    };
-
-    l.push_number(result as f64);
-    Ok(1)
+    match global_state::GLOBAL_STATE.lock() {
+        Ok(x) => NewRes {
+            content: Ok(x.instance_add(instance)),
+        },
+        Err(_) => NewRes {
+            content: Err(String::from("Failed to aquire lock")),
+        },
+    }
 }
 
-#[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn gmod13_open(state: *mut lua_State) -> i32 {
-    let lua = LuaBase::new(unsafe { (*state).luabase });
-    unsafe { lua.set_state(state) };
-    lua.push_special(SpecialType::GlobalTable);
-    lua.push_c_function(Some(wasmer));
-    lua.set_field(-2, "wasmer");
-    lua.pop(1);
-
-    lua.print("Web Assembly library loaded!");
-
-    0
+#[fmt_function]
+pub fn handle_is_valid(req: IsValidReq) -> IsValidRes {
+    match global_state::GLOBAL_STATE.lock() {
+        Ok(x) => IsValidRes {
+            content: Ok(x.instance_exists(&req.key)),
+        },
+        Err(_) => IsValidRes {
+            content: Err(String::from("Failed to aquire lock")),
+        },
+    }
 }
 
-#[no_mangle]
-pub extern "C" fn gmod13_close(_state: *mut lua_State) -> i32 {
-    1
+#[fmt_function]
+pub fn handle_remove(req: RemoveReq) -> RemoveRes {
+    match global_state::GLOBAL_STATE.lock() {
+        Ok(x) => RemoveRes {
+            content: Ok(x.instance_remove(&req.key)),
+        },
+        Err(_) => RemoveRes {
+            content: Err(String::from("Failed to aquire lock")),
+        },
+    }
 }
 
-#[derive(Error, Debug)]
-pub enum LuaWasmerError {
-    #[error("Invalid string")]
-    InvalidString,
-    #[error("Unable to convert wat to wasm")]
-    Wat2Wasm,
-    #[error("Compile error {message:?}")]
-    CompileError { message: String },
-    #[error("Unable to create instance")]
-    InstanceError(#[from] wasmer::InstantiationError),
-    #[error("Did you specify a main method?")]
-    NoMainMethodFound(#[from] wasmer::ExportError),
-    #[error("World is broken")]
-    RuntimeError(#[from] wasmer::RuntimeError),
+#[fmt_function]
+pub fn handle_invoke(req: InvokeReq) -> InvokeRes {
+    let key = &req.key;
+
+    match global_state::GLOBAL_STATE.lock() {
+        Ok(x) => {
+            if !x.instance_exists(key) {
+                return InvokeRes {
+                    content: Err(String::from("Instance does not exist")),
+                };
+            }
+
+            if let Some(inst) = x.instance(key) {
+                let content = match inst.call_entry_point() {
+                    Ok(code) => Ok(code),
+                    Err(e) => Err(format!("Error while invoking instance: {}", e)),
+                };
+
+                InvokeRes { content }
+            } else {
+                InvokeRes {
+                    content: Err(String::from("Failed to retrieve instance")),
+                }
+            }
+        }
+        Err(_) => InvokeRes {
+            content: Err(String::from("Failed to aquire lock")),
+        },
+    }
 }

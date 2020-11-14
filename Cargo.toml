@@ -4,16 +4,16 @@ version = "0.1.0"
 authors = ["MechWipf <MechWipf@googlemail.com>"]
 edition = "2018"
 
-[lib]
-name = "gmsv_wasm_win64"
-crate-type = ["cdylib"]
-
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gmod-sys = { version="*", path="crates/gmod-sys" }
+thiserror = "1.0.21"
+lrpc = "1.1.0"
+lua-wasmer-common = { path = "crates/lua-wasmer-common" }
+fibers = "0.1.13"
+futures = "0.3.8"
 wasmer = "1.0.0-alpha"
 wasmer-compiler-singlepass = "1.0.0-alpha"
 wasmer-compiler-cranelift = "1.0.0-alpha"
-thiserror = "1.0.21"
+lazy_static = "1.4.0"
+uuid = { version="0.8.1", features = ["v4"] }

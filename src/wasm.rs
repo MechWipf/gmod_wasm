@@ -1,12 +1,8 @@
-use std::{borrow::Cow, cell::RefCell, ffi::CString};
+use lua_wasmer_common::err::LuaWasmerError;
+use std::sync::Mutex;
+use wasmer::{imports, wat2wasm, Cranelift, Instance, Module, NativeFunc, Store, JIT};
 
-use wasmer::{
-    imports, wat2wasm, Cranelift, Function, Instance, Module, NativeFunc, Store, Value, JIT,
-};
-
-use crate::LuaWasmerError;
-
-pub fn wasm_instance_bytes(wasm_bytes: Cow<[u8]>) -> Result<WasmInstance, LuaWasmerError> {
+pub fn wasm_instance_bytes(wasm_bytes: impl AsRef<[u8]>) -> Result<WasmInstance, LuaWasmerError> {
     Ok(WasmInstance::new(wasm_bytes)?)
 }
 
@@ -19,13 +15,13 @@ pub fn wasm_instance_str(wat: &str) -> Result<WasmInstance, LuaWasmerError> {
     Ok(WasmInstance::new(wasm_bytes)?)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct WasmInstance {
-    instance: RefCell<Instance>,
+    instance: Mutex<Instance>,
 }
 
 impl WasmInstance {
-    fn new(wasm_bytes: Cow<[u8]>) -> Result<Self, LuaWasmerError> {
+    fn new(wasm_bytes: impl AsRef<[u8]>) -> Result<Self, LuaWasmerError> {
         let compiler = Cranelift::new();
 
         let store = Store::new(&JIT::new(&compiler).engine());
@@ -45,24 +41,36 @@ impl WasmInstance {
         // Instantiate module
         let instance = match Instance::new(&module, &import_object) {
             Ok(i) => i,
-            Err(e) => return Err(LuaWasmerError::InstanceError(e)),
+            Err(e) => {
+                return Err(LuaWasmerError::InstanceError {
+                    message: e.to_string(),
+                })
+            }
         };
 
         Ok(Self {
-            instance: RefCell::new(instance),
+            instance: Mutex::new(instance),
         })
     }
 
     pub fn call_entry_point(&self) -> Result<i32, LuaWasmerError> {
-        let inst = self.instance.borrow();
+        let inst = self.instance.lock().expect("Should work?");
         let entry_point: NativeFunc<i32, i32> = match inst.exports.get_native_function("main") {
             Ok(x) => x,
-            Err(e) => return Err(LuaWasmerError::NoMainMethodFound(e)),
+            Err(e) => {
+                return Err(LuaWasmerError::NoMainMethodFound {
+                    message: e.to_string(),
+                })
+            }
         };
 
         let result = match entry_point.call(0) {
             Ok(x) => x,
-            Err(e) => return Err(LuaWasmerError::RuntimeError(e)),
+            Err(e) => {
+                return Err(LuaWasmerError::RuntimeError {
+                    message: e.to_string(),
+                })
+            }
         };
 
         Ok(result)
@@ -71,7 +79,7 @@ impl WasmInstance {
 
 #[test]
 fn wasmer_basic() {
-    let code = "(module (type $main_t (func (param i32) (result i32))) (func $main_f (type $main_t) (param i32) (result i32) (i32.const 42)) (export \"main\" (func $main_f)))";
+    let code = r#"(module (type $main_t (func (param i32) (result i32))) (func $main_f (type $main_t) (param i32) (result i32) (i32.const 42)) (export "main" (func $main_f)))"#;
     let inst = wasm_instance_str(code).unwrap();
     let result_code = inst.call_entry_point().unwrap();
 
