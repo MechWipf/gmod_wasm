@@ -462,22 +462,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6503fe142514ca4799d4c26297c4248239fe8838d827db6bd6065c6ed29a6ce"
 
 [[package]]
-name = "gmod_wasm"
-version = "0.1.0"
-dependencies = [
- "fibers",
- "futures 0.3.8",
- "lazy_static",
- "lrpc",
- "lua-wasmer-common",
- "thiserror",
- "uuid",
- "wasmer",
- "wasmer-compiler-cranelift",
- "wasmer-compiler-singlepass",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1144,6 +1128,22 @@ name = "wasi"
 version = "0.9.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
+
+[[package]]
+name = "wasm-server"
+version = "0.1.0"
+dependencies = [
+ "fibers",
+ "futures 0.3.8",
+ "lazy_static",
+ "lrpc",
+ "lua-wasmer-common",
+ "thiserror",
+ "uuid",
+ "wasmer",
+ "wasmer-compiler-cranelift",
+ "wasmer-compiler-singlepass",
+]
 
 [[package]]
 name = "wasmer"
