@@ -1,27 +1,9 @@
-mod wasm;
-
 use gmod_sys::{
     lua_State,
     lua_wrapper::{LuaBase, SpecialType},
 };
 
 use thiserror::Error;
-
-#[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn example(l: *mut lua_State) -> i32 {
-    let lua = LuaBase::new(unsafe { (*l).luabase });
-
-    if let Some(str_val) = lua.get_string(1) {
-        lua.create_table();
-        lua.push_string(&str_val);
-        lua.set_field(-2, "value");
-        1
-    } else {
-        lua.throw_error("Parameter invalid.");
-        0
-    }
-}
 
 #[no_mangle]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
@@ -37,25 +19,14 @@ pub extern "C" fn wasmer(l: *mut lua_State) -> i32 {
     }
 }
 
-// lua_run wasmer '(module (type $main_t (func (result i32))) (func $main_f (type $main_t) (result i32) (i32.const 42)) (export "main" (func $main_f)))'
-fn handle_wasmer(l: &LuaBase) -> Result<i32, LuaWasmerError> {
+fn handle_wasmer(l: &LuaBase) -> Result<i32, LuaInterfaceError> {
     l.check_type(1, gmod_sys::lua_wrapper::Type::String);
     let str_val = match l.get_string(1) {
         Some(s) => s,
-        _ => return Err(LuaWasmerError::InvalidString),
+        _ => return Err(LuaInterfaceError::InvalidString),
     };
 
-    let instance = match wasm::wasm_instance_str(&str_val) {
-        Ok(x) => x,
-        Err(e) => return Err(e),
-    };
-
-    let result = match instance.call_entry_point() {
-        Ok(x) => x,
-        Err(e) => return Err(e),
-    };
-
-    l.push_number(result as f64);
+    l.push_number(0 as f64);
     Ok(1)
 }
 
@@ -65,6 +36,7 @@ pub extern "C" fn gmod13_open(state: *mut lua_State) -> i32 {
     let lua = LuaBase::new(unsafe { (*state).luabase });
     unsafe { lua.set_state(state) };
     lua.push_special(SpecialType::GlobalTable);
+    lua.create_table();
     lua.push_c_function(Some(wasmer));
     lua.set_field(-2, "wasmer");
     lua.pop(1);
@@ -80,17 +52,7 @@ pub extern "C" fn gmod13_close(_state: *mut lua_State) -> i32 {
 }
 
 #[derive(Error, Debug)]
-pub enum LuaWasmerError {
+pub enum LuaInterfaceError {
     #[error("Invalid string")]
     InvalidString,
-    #[error("Unable to convert wat to wasm")]
-    Wat2Wasm,
-    #[error("Compile error {message:?}")]
-    CompileError { message: String },
-    #[error("Unable to create instance")]
-    InstanceError(#[from] wasmer::InstantiationError),
-    #[error("Did you specify a main method?")]
-    NoMainMethodFound(#[from] wasmer::ExportError),
-    #[error("World is broken")]
-    RuntimeError(#[from] wasmer::RuntimeError),
 }

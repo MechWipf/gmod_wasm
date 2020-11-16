@@ -11,5 +11,5 @@ name = "gmsv_wasm_win64"
 crate-type = ["cdylib"]
 
 [dependencies]
-gmod-sys = { version="*", path="crates/gmod-sys" }
+gmod-sys = { version="*", path="../gmod-sys" }
 thiserror = "1.0.21"
