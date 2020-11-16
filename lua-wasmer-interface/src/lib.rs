@@ -39,6 +39,7 @@ pub extern "C" fn gmod13_open(state: *mut lua_State) -> i32 {
     lua.create_table();
     lua.push_c_function(Some(wasmer));
     lua.set_field(-2, "wasmer");
+    lua.set_field(-2, "wasm_interface");
     lua.pop(1);
 
     lua.print("Web Assembly library loaded!");
