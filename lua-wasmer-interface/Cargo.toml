@@ -1,0 +1,18 @@
+[package]
+name = "lua-wasmer-interface"
+version = "0.1.0"
+authors = ["MechWipf <MechWipf@googlemail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "gmsv_wasminterface_win64"
+crate-type = ["cdylib"]
+
+[dependencies]
+gmod-sys = { version="*", path="../gmod-sys" }
+lua-wasmer-common = { version="*", path="../lua-wasmer-common" }
+thiserror = "1.0.21"
+anyhow = "1.0.34"
+lrpc = "=1.1.0"
