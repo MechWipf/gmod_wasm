@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1.0.21"
-lrpc = "1.1.0"
+lrpc = "=1.1.0"
 lua-wasmer-common = { path = "../lua-wasmer-common" }
 fibers = "0.1.13"
 futures = "0.3.8"

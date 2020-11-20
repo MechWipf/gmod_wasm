@@ -12,4 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gmod-sys = { version="*", path="../gmod-sys" }
+lua-wasmer-common = { version="*", path="../lua-wasmer-common" }
 thiserror = "1.0.21"
+anyhow = "1.0.34"
+lrpc = "=1.1.0"
