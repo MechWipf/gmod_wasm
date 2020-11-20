@@ -1,5 +1,11 @@
 use lrpc::*;
 
+pub const CALL_NEW_FROM_WAT: &str = "new_from_wat";
+pub const CALL_NEW_FROM_BINARY: &str = "new_from_binary";
+pub const CALL_INVOKE: &str = "invoke";
+pub const CALL_IS_VALID: &str = "is_valid";
+pub const CALL_REMOVE: &str = "remove";
+
 #[derive(CommonStore, Debug)]
 pub struct EchoReq {
     pub msg: String,
